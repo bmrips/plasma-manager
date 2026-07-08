@@ -594,146 +594,80 @@ in
     };
   };
 
-  config = (
-    lib.mkIf cfg.enable {
-      assertions = [
-        {
-          assertion = cfg.spelling.ignoredWords == null || cfg.locale != null;
-          message = "ghostwriter: Ignored words can only be set if a locale is set.";
-        }
-      ];
+  config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = cfg.spelling.ignoredWords == null || cfg.locale != null;
+        message = "ghostwriter: Ignored words can only be set if a locale is set.";
+      }
+    ];
 
-      home.packages = lib.mkIf (cfg.package != null) [ cfg.package ];
+    home.packages = lib.mkIf (cfg.package != null) [ cfg.package ];
 
-      programs.plasma.configFile = {
-        "kde.org/ghostwriter.conf" = (
-          lib.mkMerge [
-            # Font
-            (lib.mkIf (cfg.font != null) { Style.editorFont = cfg.font; })
+    programs.plasma.configFile =
+      let
+        applyIfNonNull = opt: f: lib.mkIf (opt != null) (f opt);
+        setIfNonNull = opt: applyIfNonNull opt (x: x);
+      in
+      {
+        "kde.org/ghostwriter.conf" = {
+          Application.locale = setIfNonNull cfg.locale;
+          Backup.location = setIfNonNull cfg.general.fileSaving.backupLocation;
+          Preview = {
+            codeFont = cfg.preview.codeFont;
+            htmlPreviewOpen = setIfNonNull cfg.preview.openByDefault;
+            lastUsedExporter = setIfNonNull cfg.preview.markdownVariant;
+            lastUsedExporterParams = setIfNonNull cfg.preview.commandLineOptions;
+            textFont = setIfNonNull cfg.preview.textFont;
+          };
+          Save = {
+            autoSave = setIfNonNull cfg.general.fileSaving.autoSave;
+            backupFile = setIfNonNull cfg.general.fileSaving.backupFileOnSave;
+          };
+          Session = {
+            rememberFileHistory = setIfNonNull cfg.general.session.rememberRecentFiles;
+            restoreSession = setIfNonNull cfg.general.session.openLastFileOnStartup;
+          };
+          Spelling.liveSpellCheck = setIfNonNull cfg.spelling.liveSpellCheck;
+          Style = {
+            blockquoteStyle = setIfNonNull cfg.editor.styling.blockquoteStyle;
+            displayTimeInFullScreen = setIfNonNull cfg.general.display.showCurrentTimeInFullscreen;
+            editorFont = setIfNonNull cfg.font;
+            editorWidth = setIfNonNull cfg.editor.styling.editorWidth;
+            focusMode = setIfNonNull cfg.editor.styling.focusMode;
+            hideMenuBarInFullscreen = setIfNonNull cfg.general.display.hideMenubarInFullscreen;
+            interfaceStyle = setIfNonNull cfg.general.display.interfaceStyle;
+            largeHeadings = setIfNonNull cfg.editor.styling.useLargeHeadings;
+            showUnbreakableSpace = setIfNonNull cfg.general.display.showUnbreakableSpace;
+            theme = setIfNonNull cfg.theme.name;
+            underlineInsteadOfItalics = setIfNonNull cfg.editor.styling.emphasisStyle;
+          };
+          Tabs = {
+            insertSpacesForTabs = setIfNonNull cfg.editor.tabulation.insertSpacesForTabs;
+            tabWidth = setIfNonNull cfg.editor.tabulation.tabWidth;
+          };
+          Typing = {
+            autoMatchEnabled = setIfNonNull cfg.editor.typing.automaticallyMatchCharacters.enable;
+            autoMatchFilter = applyIfNonNull cfg.editor.typing.automaticallyMatchCharacters.characters (v: {
+              value = v;
+              escapeValue = false;
+            });
+            bulletPointCyclingEnabled = setIfNonNull cfg.editor.typing.bulletPointCycling;
+          };
+          Window.sidebarOpen = setIfNonNull cfg.window.sidebarOpen;
+        };
 
-            # Locale
-            (lib.mkIf (cfg.locale != null) { Application.locale = cfg.locale; })
-
-            # Editor > Styling
-            (lib.mkIf (cfg.editor.styling.blockquoteStyle != null) {
-              Style.blockquoteStyle = cfg.editor.styling.blockquoteStyle;
-            })
-            (lib.mkIf (cfg.editor.styling.emphasisStyle != null) {
-              Style.underlineInsteadOfItalics = cfg.editor.styling.emphasisStyle;
-            })
-            (lib.mkIf (cfg.editor.styling.editorWidth != null) {
-              Style.editorWidth = cfg.editor.styling.editorWidth;
-            })
-            (lib.mkIf (cfg.editor.styling.focusMode != null) {
-              Style.focusMode = cfg.editor.styling.focusMode;
-            })
-            (lib.mkIf (cfg.editor.styling.useLargeHeadings != null) {
-              Style.largeHeadings = cfg.editor.styling.useLargeHeadings;
-            })
-
-            # Editor > Tabulation
-            (lib.mkIf (cfg.editor.tabulation.insertSpacesForTabs != null) {
-              Tabs.insertSpacesForTabs = cfg.editor.tabulation.insertSpacesForTabs;
-            })
-            (lib.mkIf (cfg.editor.tabulation.tabWidth != null) {
-              Tabs.tabWidth = cfg.editor.tabulation.tabWidth;
-            })
-
-            # Editor > Typing
-            (lib.mkIf (cfg.editor.typing.automaticallyMatchCharacters.enable != null) {
-              Typing.autoMatchEnabled = cfg.editor.typing.automaticallyMatchCharacters.enable;
-            })
-            (lib.mkIf (cfg.editor.typing.automaticallyMatchCharacters.characters != null) {
-              Typing.autoMatchFilter = {
-                value = cfg.editor.typing.automaticallyMatchCharacters.characters;
-                escapeValue = false;
-              };
-            })
-            (lib.mkIf (cfg.editor.typing.bulletPointCycling != null) {
-              Typing.bulletPointCyclingEnabled = cfg.editor.typing.bulletPointCycling;
-            })
-
-            # General > Display
-            (lib.mkIf (cfg.general.display.hideMenubarInFullscreen != null) {
-              Style.hideMenuBarInFullscreen = cfg.general.display.hideMenubarInFullscreen;
-            })
-            (lib.mkIf (cfg.general.display.interfaceStyle != null) {
-              Style.interfaceStyle = cfg.general.display.interfaceStyle;
-            })
-            (lib.mkIf (cfg.general.display.showCurrentTimeInFullscreen != null) {
-              Style.displayTimeInFullScreen = cfg.general.display.showCurrentTimeInFullscreen;
-            })
-            (lib.mkIf (cfg.general.display.showUnbreakableSpace != null) {
-              style.showUnbreakableSpace = cfg.general.display.showUnbreakableSpace;
-            })
-
-            # General > File Saving
-            (lib.mkIf (cfg.general.fileSaving.autoSave != null) {
-              Save.autoSave = cfg.general.fileSaving.autoSave;
-            })
-            (lib.mkIf (cfg.general.fileSaving.backupFileOnSave != null) {
-              Save.backupFile = cfg.general.fileSaving.backupFileOnSave;
-            })
-            (lib.mkIf (cfg.general.fileSaving.backupLocation != null) {
-              Backup.location = cfg.general.fileSaving.backupLocation;
-            })
-
-            # General > Session
-            (lib.mkIf (cfg.general.session.openLastFileOnStartup != null) {
-              Session.restoreSession = cfg.general.session.openLastFileOnStartup;
-            })
-            (lib.mkIf (cfg.general.session.rememberRecentFiles != null) {
-              Session.rememberFileHistory = cfg.general.session.rememberRecentFiles;
-            })
-
-            # Spelling
-            (lib.mkIf (cfg.spelling.liveSpellCheck != null) {
-              Spelling = {
-                liveSpellCheck = cfg.spelling.liveSpellCheck;
-              };
-            })
-
-            # Preview options
-            (lib.mkIf (cfg.preview.codeFont != null) { Preview.codeFont = cfg.preview.codeFont; })
-            (lib.mkIf (cfg.preview.commandLineOptions != null) {
-              Preview.lastUsedExporterParams = cfg.preview.commandLineOptions;
-            })
-            (lib.mkIf (cfg.preview.markdownVariant != null) {
-              Preview.lastUsedExporter = cfg.preview.markdownVariant;
-            })
-            (lib.mkIf (cfg.preview.openByDefault != null) {
-              Preview.htmlPreviewOpen = cfg.preview.openByDefault;
-            })
-            (lib.mkIf (cfg.preview.textFont != null) { Preview.textFont = cfg.preview.textFont; })
-
-            # Theme
-            (lib.mkIf (cfg.theme.name != null) { Style.theme = cfg.theme.name; })
-
-            # Window
-            (lib.mkIf (cfg.window.sidebarOpen != null) { Window.sidebarOpen = cfg.window.sidebarOpen; })
-          ]
-        );
-
-        "KDE/Sonnet.conf".General = (
-          lib.mkMerge [
-            (lib.mkIf (cfg.spelling.autoDetectLanguage != null) {
-              autodetectLanguage = cfg.spelling.autoDetectLanguage;
-            })
-            (lib.mkIf (cfg.spelling.checkerEnabledByDefault != null) {
-              checkerEnabledByDefault = cfg.spelling.checkerEnabledByDefault;
-            })
-            (lib.mkIf (cfg.spelling.ignoreUppercase != null) {
-              checkUppercase = !cfg.spelling.ignoreUppercase;
-            })
-            (lib.mkIf (cfg.spelling.ignoredWords != null && cfg.locale != null) {
-              "ignore_${cfg.locale}" = cfg.spelling.ignoredWords;
-            })
-            (lib.mkIf (cfg.locale != null) { defaultLanguage = cfg.locale; })
-          ]
-        );
+        "KDE/Sonnet.conf".General = {
+          autodetectLanguage = setIfNonNull cfg.spelling.autoDetectLanguage;
+          checkerEnabledByDefault = setIfNonNull cfg.spelling.checkerEnabledByDefault;
+          checkUppercase = applyIfNonNull cfg.spelling.ignoreUppercase (v: !v);
+          "ignore_$cfg.locale" = lib.mkIf (
+            cfg.spelling.ignoredWords != null && cfg.locale != null
+          ) cfg.spelling.ignoredWords;
+          defaultLanguage = setIfNonNull cfg.locale;
+        };
       };
 
-      xdg.dataFile = (createThemes cfg.theme.customThemes);
-    }
-  );
+    xdg.dataFile = (createThemes cfg.theme.customThemes);
+  };
 }
