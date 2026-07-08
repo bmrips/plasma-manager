@@ -174,53 +174,29 @@ in
     home.packages = lib.mkIf (cfg.package != null) [ cfg.package ];
     programs.plasma.configFile."elisarc" =
       let
-        concatenatedPaths = builtins.concatStringsSep "," cfg.indexer.paths;
+        applyIfNonNull = opt: f: lib.mkIf (opt != null) (f opt);
+        setIfNonNull = opt: applyIfNonNull opt (x: x);
       in
-      lib.mkMerge [
-        (lib.mkIf (cfg.indexer.paths != null) {
-          ElisaFileIndexer.RootPath = {
-            shellExpand = true;
-            value = concatenatedPaths;
-          };
-        })
-        (lib.mkMerge [
-          (lib.mkIf (cfg.player.playAtStartup != null) {
-            PlayerSettings.PlayAtStartup.value = cfg.player.playAtStartup;
-          })
-          (lib.mkIf (cfg.indexer.scanAtStartup != null) {
-            PlayerSettings.ScanAtStartup.value = cfg.indexer.scanAtStartup;
-          })
-          (lib.mkIf (cfg.appearance.showNowPlayingBackground != null) {
-            PlayerSettings.ShowNowPlayingBackground.value = cfg.appearance.showNowPlayingBackground;
-          })
-          (lib.mkIf (cfg.appearance.showProgressOnTaskBar != null) {
-            PlayerSettings.ShowProgressOnTaskBar.value = cfg.appearance.showProgressOnTaskBar;
-          })
-          (lib.mkIf (cfg.player.minimiseToSystemTray != null) {
-            PlayerSettings.ShowSystemTrayIcon.value = cfg.player.minimiseToSystemTray;
-          })
-          (lib.mkIf (cfg.indexer.ratingsStyle != null) {
-            PlayerSettings.UseFavoriteStyleRatings.value =
-              if (cfg.indexer.ratingsStyle == "Stars") then false else true;
-          })
-        ])
-        (lib.mkIf (cfg.player.useAbsolutePlaylistPaths != null) {
-          Playlist.AlwaysUseAbsolutePlaylistPaths.value = cfg.player.useAbsolutePlaylistPaths;
-        })
-        (lib.mkIf (cfg.appearance.colorScheme != null) {
-          UiSettings.ColorScheme.value = cfg.appearance.colorScheme;
-        })
-        (lib.mkMerge [
-          (lib.mkIf (cfg.appearance.embeddedView != null) {
-            Views.EmbeddedView.value = "All" + cfg.appearance.embeddedView;
-          })
-          (lib.mkIf (cfg.appearance.defaultFilesViewPath != null) {
-            Views.InitialFilesViewPath.value = cfg.appearance.defaultFilesViewPath;
-          })
-          (lib.mkIf (cfg.appearance.defaultView != null) {
-            Views.InitialView.value = cfg.appearance.defaultView;
-          })
-        ])
-      ];
+      {
+        ElisaFileIndexer.RootPath = applyIfNonNull cfg.indexer.paths (v: {
+          shellExpand = true;
+          value = lib.concatStringsSep "," v;
+        });
+        PlayerSettings = {
+          PlayAtStartup = setIfNonNull cfg.player.playAtStartup;
+          ScanAtStartup = setIfNonNull cfg.indexer.scanAtStartup;
+          ShowNowPlayingBackground = setIfNonNull cfg.appearance.showNowPlayingBackground;
+          ShowProgressOnTaskBar = setIfNonNull cfg.appearance.showProgressOnTaskBar;
+          ShowSystemTrayIcon = setIfNonNull cfg.player.minimiseToSystemTray;
+          UseFavoriteStyleRatings = applyIfNonNull cfg.indexer.ratingsStyle (v: v == "Stars");
+        };
+        Playlist.AlwaysUseAbsolutePlaylistPaths = setIfNonNull cfg.player.useAbsolutePlaylistPaths;
+        UiSettings.ColorScheme = setIfNonNull cfg.appearance.colorScheme;
+        Views = {
+          EmbeddedView = applyIfNonNull cfg.appearance.embeddedView ("All" + cfg.appearance.embeddedView);
+          InitialFilesViewPath = setIfNonNull cfg.appearance.defaultFilesViewPath;
+          InitialView = setIfNonNull cfg.appearance.defaultView;
+        };
+      };
   };
 }
