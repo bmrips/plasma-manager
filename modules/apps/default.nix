@@ -1,11 +1,10 @@
-{ ... }:
-
 {
   imports = [
+    ./dolphin.nix
     ./elisa.nix
     ./ghostwriter.nix
-    ./konsole.nix
     ./kate
+    ./konsole.nix
     ./okular.nix
   ];
 }
