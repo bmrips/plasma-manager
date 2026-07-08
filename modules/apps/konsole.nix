@@ -5,6 +5,8 @@
   ...
 }:
 let
+  inherit (import ../../lib/options.nix { inherit config lib; }) shortcutSchemesOption;
+
   inherit (import ../../lib/types.nix { inherit config lib; })
     attrsWith'
     basicSettingsType
@@ -130,6 +132,8 @@ in
       '';
     };
 
+    shortcutSchemes = shortcutSchemesOption;
+
     customColorSchemes = lib.mkOption {
       type = with lib.types; attrsOf (either path iniFormat.type);
       default = { };
@@ -223,6 +227,8 @@ in
         };
       }
     ];
+
+    programs.plasma.shortcutSchemes.konsole = cfg.shortcutSchemes;
 
     xdg.dataFile = lib.mkMerge [
       (lib.mapAttrs' mkColorScheme cfg.customColorSchemes)

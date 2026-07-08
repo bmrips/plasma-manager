@@ -5,6 +5,8 @@
   ...
 }:
 let
+  inherit (import ../../lib/options.nix { inherit config lib; }) shortcutSchemesOption;
+
   cfg = config.programs.elisa;
 
   capitalizeWord =
@@ -33,6 +35,7 @@ in
             You can also set this to `null` if you're using a system-wide installation of Elisa on NixOS.
           '';
         };
+    shortcutSchemes = shortcutSchemesOption;
 
     appearance = {
       colorScheme = lib.mkOption {
@@ -172,6 +175,7 @@ in
 
   config = lib.mkIf cfg.enable {
     home.packages = lib.mkIf (cfg.package != null) [ cfg.package ];
+
     programs.plasma.configFile."elisarc" =
       let
         applyIfNonNull = opt: f: lib.mkIf (opt != null) (f opt);
@@ -198,5 +202,7 @@ in
           InitialView = setIfNonNull cfg.appearance.defaultView;
         };
       };
+
+    programs.plasma.shortcutSchemes.elisa = cfg.shortcutSchemes;
   };
 }

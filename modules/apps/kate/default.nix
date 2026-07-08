@@ -6,6 +6,8 @@
 }:
 
 let
+  inherit (import ../../../lib/options.nix { inherit config lib; }) shortcutSchemesOption;
+
   cfg = config.programs.kate;
 
   # compute kate's magic TabHandlingMode
@@ -255,6 +257,8 @@ in
           '';
         };
 
+    shortcutSchemes = shortcutSchemesOption;
+
     # ==================================
     #     INDENTATION
     editor = {
@@ -396,6 +400,8 @@ in
 
   config = {
     home.packages = lib.mkIf (cfg.enable && cfg.package != null) [ cfg.package ];
+
+    programs.plasma.shortcutSchemes.kate = cfg.shortcutSchemes;
 
     # In case of using a custom theme, check that there is no name collision
     home.activation.checkKateTheme = lib.mkIf (cfg.enable && cfg.editor.theme.src != null) (

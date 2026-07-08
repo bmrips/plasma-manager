@@ -5,6 +5,9 @@
   ...
 }:
 
+let
+  inherit (import ../../lib/options.nix { inherit config lib; }) shortcutSchemesOption;
+in
 {
   options.programs.okular = {
     enable = lib.mkEnableOption ''
@@ -25,6 +28,8 @@
             `pkgs.kdePackages.okular` in Plasma6. Use `null` if home-manager should not install Okular.
           '';
         };
+
+    shortcutSchemes = shortcutSchemesOption;
 
     # ==================================
     #     GENERAL
@@ -339,5 +344,6 @@
         };
       };
 
+      programs.plasma.shortcutSchemes.okular = cfg.shortcutSchemes;
     };
 }
